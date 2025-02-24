@@ -21,4 +21,8 @@ var (
 	DraftCombineSpotShooting          = "draftcombinespotshooting"
 	DraftCombineStats                 = "draftcombinestats"
 	DraftHistory                      = "drafthistory"
+	FranchiseHistory                  = "franchisehistory"
+	FranchiseLeaders                  = "franchiseleaders"
+	FranchisePlayers                  = "franchiseplayers"
+	GameRotation                      = "gamerotation"
 )

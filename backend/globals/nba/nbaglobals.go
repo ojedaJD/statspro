@@ -17,59 +17,24 @@ var NBASession *Client
 
 // NBAResponse represents the API response structure.
 type NBAResponse struct {
-	*http.Response
-	URL string
+	Status     string
+	StatusCode int
+	Data       interface{}
+	URL        string
+	Headers    http.Header
 }
 
-func (r *NBAResponse) isOk() bool {
-	return r.StatusCode == 200
-}
-
-// ParseResponse parses the response body into an interface{} while checking encoding type.
-func (r *NBAResponse) ParseResponse() (interface{}, error) {
-	if r.Response == nil {
-		return nil, fmt.Errorf("response is nil")
+func (r *NBAResponse) GetData() (interface{}, error) {
+	if r.Data == nil {
+		return nil, fmt.Errorf("No Data")
 	}
-	defer r.Body.Close()
-
-	var reader io.Reader = r.Body
-
-	// Check Content-Encoding for gzip or deflate
-	contentEncoding := r.Header.Get("Content-Encoding")
-	switch contentEncoding {
-	case "gzip":
-		gzReader, err := gzip.NewReader(r.Body)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create gzip reader: %w", err)
-		}
-		defer gzReader.Close()
-		reader = gzReader
-	case "deflate":
-		zlibReader, err := zlib.NewReader(r.Body)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create zlib reader: %w", err)
-		}
-		defer zlibReader.Close()
-		reader = zlibReader
-	}
-
-	// Decode JSON using UseNumber to preserve number formats
-	decoder := json.NewDecoder(reader)
-	decoder.UseNumber() // Treat numbers as json.Number instead of float64
-
-	var result interface{}
-	err := decoder.Decode(&result)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
-	}
-
-	return result, nil
+	return r.Data, nil
 }
 
 // GetParameters extracts the parameters from the response.
 func (r *NBAResponse) GetParameters() (map[string]interface{}, error) {
-	data, err := r.ParseResponse()
-	if err != nil {
+	data, err := r.GetData()
+	if err == nil {
 		return nil, err
 	}
 
@@ -84,7 +49,7 @@ func (r *NBAResponse) GetParameters() (map[string]interface{}, error) {
 
 // GetResource extracts the resource field from the response.
 func (r *NBAResponse) GetResource() (string, error) {
-	data, err := r.ParseResponse()
+	data, err := r.GetData()
 	if err != nil {
 		return "", err
 	}
@@ -100,7 +65,7 @@ func (r *NBAResponse) GetResource() (string, error) {
 
 // GetResultSets extracts the resultSets from the response.
 func (r *NBAResponse) GetResultSets() ([]interface{}, error) {
-	data, err := r.ParseResponse()
+	data, err := r.GetData()
 	if err != nil {
 		return nil, err
 	}
@@ -120,9 +85,6 @@ func (r *NBAResponse) isNil() bool {
 
 // GetNormalizedDict processes all resultSets concurrently and stores them in a map keyed by resultSet names.
 func (r *NBAResponse) GetNormalizedDict() (map[string][]map[string]interface{}, error) {
-	if r.isNil() {
-		return nil, fmt.Errorf("error %d")
-	}
 	resultSets, err := r.GetResultSets()
 	if err != nil {
 		return nil, err
@@ -343,11 +305,6 @@ func (r *NBAResponse) GetRowSet() ([]interface{}, error) {
 	return nil, fmt.Errorf("rowSet not found in resultSets")
 }
 
-// GetResponse returns the raw response as a string.
-func (r *NBAResponse) GetResponse() *http.Response {
-	return r.Response
-}
-
 // NBAClient wraps an HTTP client with default headers for NBA API requests.
 type Client struct {
 	HTTPClient     *http.Client
@@ -427,17 +384,66 @@ func (c *Client) NBAGetRequest(endpoint string, params map[string]string, refere
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected response status: %d", resp.StatusCode)
 	}
-	parseResponse(resp.Body, resp.Header)
+	data, err := parseResponse(resp.Body, resp.Header)
+	if err != nil {
+		return nil, err
+	}
 	// Return structured response
 	return &NBAResponse{
-		Response: resp,
-
-		URL: fullURL,
+		StatusCode: resp.StatusCode,
+		Status:     resp.Status,
+		Data:       data,
+		URL:        fullURL,
+		Headers:    resp.Header,
 	}, nil
 }
 
-func parseResponse(body io.ReadCloser, header http.Header) {
+// parseResponse reads and decodes the HTTP response body based on content encoding.
+func parseResponse(body io.ReadCloser, header http.Header) (interface{}, error) {
+	defer func() {
+		if err := body.Close(); err != nil {
+			fmt.Println("Warning: failed to close response body:", err)
+		}
+	}()
 
+	var reader io.Reader = body
+	contentEncoding := header.Get("Content-Encoding")
+
+	switch contentEncoding {
+	case "gzip":
+		gzReader, err := gzip.NewReader(body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gzip reader: %w", err)
+		}
+		defer func() {
+			if err := gzReader.Close(); err != nil {
+				fmt.Println("Warning: failed to close gzip reader:", err)
+			}
+		}()
+		reader = gzReader
+	case "deflate":
+		zlibReader, err := zlib.NewReader(body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create zlib reader: %w", err)
+		}
+		defer func() {
+			if err := zlibReader.Close(); err != nil {
+				fmt.Println("Warning: failed to close zlib reader:", err)
+			}
+		}()
+		reader = zlibReader
+	}
+
+	// Decode JSON with UseNumber to avoid float precision issues
+	decoder := json.NewDecoder(reader)
+	decoder.UseNumber()
+
+	var result interface{}
+	if err := decoder.Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+	}
+
+	return result, nil
 }
 
 // PrepareURL constructs a full URL with query parameters.

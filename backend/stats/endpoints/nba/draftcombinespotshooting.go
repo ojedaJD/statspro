@@ -2,22 +2,24 @@ package nba
 
 import (
 	client "sports_api/globals/nba"
+	helpers "sports_api/helpers/nba"
 	endpoints "sports_api/urls/nba"
 )
 
-// DraftCombineSpotShooting calls the NBA API and retrieves spot shooting drill results.
+// DraftCombineSpotShooting retrieves spot shooting stats for NBA draft prospects.
 func DraftCombineSpotShooting(leagueID, seasonYear string) (*client.NBAResponse, error) {
-	// Validate parameters
-	if err := validateDraftCombineParams(leagueID, seasonYear); err != nil {
+	// Validate input parameters
+	if valid, err := helpers.ValidateLeagueID(leagueID); !valid {
+		return nil, err
+	}
+	if valid, err := helpers.ValidateSeasonYear(seasonYear); !valid {
 		return nil, err
 	}
 
-	// Construct query parameters
 	params := map[string]string{
 		"LeagueID":   leagueID,
 		"SeasonYear": seasonYear,
 	}
 
-	// Make API request
 	return client.NBASession.NBAGetRequest(endpoints.DraftCombineSpotShooting, params, "", nil)
 }

@@ -2,35 +2,45 @@ package nba
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 )
 
-// TestDraftCombineSpotShooting validates correct and incorrect parameters.
 func TestDraftCombineSpotShooting(t *testing.T) {
+	validLeagueID := "00"
+	validSeasonYear := "2019"
+	invalidLeagueID := "99"
+	invalidSeasonYear := "19"
+
 	tests := []struct {
 		leagueID   string
 		seasonYear string
 		expectErr  bool
 	}{
-		{"00", "2019", false},
-		{"10", "2020", false},
-		{"99", "2019", true},
-		{"00", "abcd", true},
-		{"", "2019", true},
-		{"00", "", true},
+		{validLeagueID, validSeasonYear, false},  // Valid request
+		{invalidLeagueID, validSeasonYear, true}, // Invalid LeagueID
+		{validLeagueID, invalidSeasonYear, true}, // Invalid SeasonYear
+		{"", validSeasonYear, true},              // Missing LeagueID
+		{validLeagueID, "", true},                // Missing SeasonYear
 	}
 
 	for _, test := range tests {
 		resp, err := DraftCombineSpotShooting(test.leagueID, test.seasonYear)
-		fmt.Println(resp.GetNormalizedDict())
-		fmt.Println(resp.GetNormalizedDict())
 		if test.expectErr {
 			if err == nil {
 				t.Errorf("Expected error but got nil for input: %+v", test)
+			} else {
+				fmt.Printf("Expected error received for input: %+v\n", test)
 			}
 		} else {
 			if err != nil {
-				t.Errorf("Unexpected error for input: %+v, error: %v", test, err)
+				t.Errorf("Unexpected error: %v for input: %+v", err, test)
+			} else if resp == nil {
+				t.Errorf("Received nil response from API for input: %+v", test)
+			} else if resp.StatusCode != http.StatusOK {
+				t.Errorf("Unexpected response code: got %d, expected %d for input: %+v", resp.StatusCode, http.StatusOK, test)
+			} else {
+				fmt.Printf("API call succeeded with HTTP 200 for input: %+v\n", test)
 			}
 		}
 	}

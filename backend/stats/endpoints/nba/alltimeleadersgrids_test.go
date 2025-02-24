@@ -40,8 +40,6 @@ func TestAllTimeLeadersGrids_ActualCall(t *testing.T) {
 			} else if resp.StatusCode != http.StatusOK {
 				t.Errorf("Unexpected response code: got %d, expected %d for input: %v", resp.StatusCode, http.StatusOK, test)
 			} else {
-				i, _ := resp.GetRowSets()
-				fmt.Println(i)
 				fmt.Printf("API call succeeded with HTTP 200 for input: %v\n", test)
 			}
 		}

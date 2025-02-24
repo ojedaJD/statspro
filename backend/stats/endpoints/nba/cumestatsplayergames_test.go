@@ -47,7 +47,6 @@ func TestCumulativeStatsPlayerGames(t *testing.T) {
 
 	for _, test := range tests {
 		resp, err := CumulativeStatsPlayerGames(test.opts)
-		resp.ParseResponse()
 		if test.expectErr {
 			if err == nil {
 				t.Errorf("Expected error but got nil for input: %+v", test.opts)

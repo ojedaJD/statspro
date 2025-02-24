@@ -6,36 +6,20 @@ import (
 	endpoints "sports_api/urls/nba"
 )
 
-// DraftCombineStats calls the NBA API and retrieves combine stats for a given season.
+// DraftCombineStats retrieves draft combine statistics for NBA draft prospects.
 func DraftCombineStats(leagueID, seasonYear string) (*client.NBAResponse, error) {
-	// Validate parameters
-	if err := validateDraftCombineStatsParams(leagueID, seasonYear); err != nil {
+	// Validate input parameters
+	if valid, err := helpers.ValidateLeagueID(leagueID); !valid {
+		return nil, err
+	}
+	if valid, err := helpers.ValidateSeasonYearOrAllTime(seasonYear); !valid {
 		return nil, err
 	}
 
-	// Construct query parameters
 	params := map[string]string{
 		"LeagueID":   leagueID,
 		"SeasonYear": seasonYear,
 	}
 
-	// Make API request
 	return client.NBASession.NBAGetRequest(endpoints.DraftCombineStats, params, "", nil)
-}
-
-// validateDraftCombineStatsParams ensures leagueID and seasonYear are valid for DraftCombineStats.
-func validateDraftCombineStatsParams(leagueID, seasonYear string) error {
-	// Validate LeagueID
-	if _, err := helpers.ValidateLeagueID(leagueID); err != nil {
-		return err
-	}
-
-	// Validate SeasonYear (must be either "YYYY-YY" format or "All Time")
-	if seasonYear != "All Time" {
-		if _, err := helpers.ValidateSeason(seasonYear); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

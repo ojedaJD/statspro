@@ -7,24 +7,22 @@ import (
 
 // Precompiled regex patterns for validation
 var (
-	validLeagueIDs        = map[string]bool{"00": true, "10": true, "20": true} // NBA, WNBA, G-League
-	validSeasonPattern    = regexp.MustCompile(`^\d{4}-\d{2}$`)                 // "YYYY-YY" format
-	validSeasonTypes      = regexp.MustCompile(`^(Regular Season|Pre Season|Playoffs|All Star)$`)
-	validPerModes         = regexp.MustCompile(`^(Totals|PerGame)$`)
-	validLocations        = regexp.MustCompile(`^(Home|Road)$`)
-	validConferences      = regexp.MustCompile(`^(East|West)$`)
-	validDivisions        = regexp.MustCompile(`^(Atlantic|Central|Northwest|Pacific|Southeast|Southwest|East|West)$`)
-	validStarterBench     = regexp.MustCompile(`^(Starters|Bench)?$`)
-	validOutcome          = regexp.MustCompile(`^(W|L)?$`)
-	validSeasonSegment    = regexp.MustCompile(`^(Post All-Star|Pre All-Star)?$`)
-	validPlayerPosition   = regexp.MustCompile(`^(F|C|G|C-F|F-C|F-G|G-F)?$`)
-	validPlayerExperience = regexp.MustCompile(`^(Rookie|Sophomore|Veteran)?$`)
-	validGameScope        = regexp.MustCompile(`^(Yesterday|Last 10)?$`)
-	validGameIDPattern    = regexp.MustCompile(`^(\d{10})(,\d{10})*$`)
-	validPlayerOrTeam     = regexp.MustCompile(`^(Player|Team)$`)
-	validPlayerScope      = regexp.MustCompile(`^(All Players|Rookies)$`)
-	validSeasonYear       = regexp.MustCompile(`^\d{4}$`) // Ensures "YYYY" format (e.g., "2019")
-
+	validLeagueIDs           = map[string]bool{"00": true, "10": true, "20": true} // NBA, WNBA, G-League
+	validSeasonTypes         = regexp.MustCompile(`^(Regular Season|Pre Season|Playoffs|All Star)$`)
+	validPerMode             = regexp.MustCompile(`^(Totals|PerGame|MinutesPer|Per48|Per40|Per36|PerMinute|PerPossession|PerPlay|Per100Possessions|Per100Plays)$`)
+	validLocations           = regexp.MustCompile(`^(Home|Road)$`)
+	validConferences         = regexp.MustCompile(`^(East|West)$`)
+	validDivisions           = regexp.MustCompile(`^(Atlantic|Central|Northwest|Pacific|Southeast|Southwest|East|West)$`)
+	validStarterBench        = regexp.MustCompile(`^(Starters|Bench)?$`)
+	validSeasonSegment       = regexp.MustCompile(`^(Post All-Star|Pre All-Star)?$`)
+	validPlayerPosition      = regexp.MustCompile(`^(F|C|G|C-F|F-C|F-G|G-F)?$`)
+	validPlayerExperience    = regexp.MustCompile(`^(Rookie|Sophomore|Veteran)?$`)
+	validGameScope           = regexp.MustCompile(`^(Yesterday|Last 10)?$`)
+	validGameIDPattern       = regexp.MustCompile(`^(\d{10})(,\d{10})*$`)
+	validPlayerOrTeam        = regexp.MustCompile(`^(Player|Team)$`)
+	validPlayerScope         = regexp.MustCompile(`^(All Players|Rookies)$`)
+	validSeasonYear          = regexp.MustCompile(`^\d{4}$`) // Ensures "YYYY" format (e.g., "2019")
+	validSeasonYearOrAllTime = regexp.MustCompile(`^(\d{4}-\d{2})|(All Time)$`)
 )
 
 // ValidateLeagueID checks if the given LeagueID is valid.
@@ -37,7 +35,7 @@ func ValidateLeagueID(leagueID string) (bool, error) {
 
 // ValidateSeason checks if the given Season format is valid using regex.
 func ValidateSeason(season string) (bool, error) {
-	if !validSeasonPattern.MatchString(season) {
+	if !validSeasonYearOrAllTime.MatchString(season) {
 		return false, errors.New("invalid Season format: must be 'YYYY-YY' (e.g., '2023-24')")
 	}
 	return true, nil
@@ -53,7 +51,7 @@ func ValidateSeasonType(seasonType string) (bool, error) {
 
 // ValidatePerMode checks if the given perMode is valid.
 func ValidatePerMode(perMode string) (bool, error) {
-	if !validPerModes.MatchString(perMode) {
+	if !validPerMode.MatchString(perMode) {
 		return false, errors.New("invalid PerMode: must be 'Totals' or 'PerGame'")
 	}
 	return true, nil
@@ -93,7 +91,7 @@ func ValidateStarterBench(starterBench string) (bool, error) {
 
 // ValidateOutcome checks if the given Outcome is valid.
 func ValidateOutcome(outcome string) (bool, error) {
-	if !validOutcome.MatchString(outcome) {
+	if !(outcome == "W" || outcome == "L") {
 		return false, errors.New("invalid Outcome: must be 'W' or 'L'")
 	}
 	return true, nil
@@ -167,6 +165,14 @@ func ValidatePlayerScope(playerScope string) (bool, error) {
 func ValidateGameIDs(gameIDs string) (bool, error) {
 	if !validGameIDPattern.MatchString(gameIDs) {
 		return false, errors.New("invalid GameIDs format: must be a 10-digit GameID or multiple GameIDs separated by commas")
+	}
+	return true, nil
+}
+
+// ValidateGameID ensures the GameID follows the correct format (10-digit numeric string).
+func ValidateGameID(gameID string) (bool, error) {
+	if !validGameIDPattern.MatchString(gameID) {
+		return false, errors.New("invalid GameID: must be a 10-digit number (e.g., '0021700807')")
 	}
 	return true, nil
 }

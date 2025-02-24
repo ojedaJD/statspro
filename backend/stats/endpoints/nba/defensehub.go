@@ -1,7 +1,6 @@
 package nba
 
 import (
-	"fmt"
 	client "sports_api/globals/nba"
 	helpers "sports_api/helpers/nba"
 	endpoints "sports_api/urls/nba"
@@ -49,11 +48,11 @@ func DefenseHub(opts DefenseHubOptions) (*client.NBAResponse, error) {
 		"Season":       opts.Season,
 		"SeasonType":   opts.SeasonType,
 	}
-	request, err := client.NBASession.NBAGetRequest(endpoints.DefenseHub, params, "", nil)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(request.ParseResponse())
+	//request, err := client.NBASession.NBAGetRequest(endpoints.DefenseHub, params, "", nil)
+	//if err != nil {
+	//	return nil, err
+	//}
+
 	// Make API request
 	return client.NBASession.NBAGetRequest(endpoints.DefenseHub, params, "", nil)
 }
