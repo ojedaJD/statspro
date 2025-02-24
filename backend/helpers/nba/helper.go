@@ -3,6 +3,7 @@ package nba
 import (
 	"errors"
 	"regexp"
+	"time"
 )
 
 // Precompiled regex patterns for validation
@@ -24,6 +25,27 @@ var (
 	validSeasonYear          = regexp.MustCompile(`^\d{4}$`) // Ensures "YYYY" format (e.g., "2019")
 	validSeasonYearOrAllTime = regexp.MustCompile(`^(\d{4}-\d{2})|(All Time)$`)
 )
+
+// FormatDateToString converts a time.Time object to a "YYYY-MM-DD" string format.
+func FormatDateToString(date *time.Time) string {
+	if date == nil {
+		return ""
+	}
+	return date.Format("2006-01-02")
+}
+
+// ParseDateString converts a "YYYY-MM-DD" string to a time.Time object.
+func ParseDateString(dateStr string) (*time.Time, error) {
+	if dateStr == "" {
+		return nil, nil // Return nil if the string is empty (nullable case)
+	}
+
+	parsedDate, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return nil, errors.New("invalid date format: must be 'YYYY-MM-DD'")
+	}
+	return &parsedDate, nil
+}
 
 // ValidateLeagueID checks if the given LeagueID is valid.
 func ValidateLeagueID(leagueID string) (bool, error) {

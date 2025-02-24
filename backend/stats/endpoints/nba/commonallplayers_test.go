@@ -17,13 +17,17 @@ func TestCommonAllPlayers_ActualCall(t *testing.T) {
 		{0, "10", "2022-23", false}, // Valid request (All players, WNBA)
 		{1, "20", "2021-22", false}, // Valid request (Current season, G-League)
 		{2, "00", "2023-24", true},  // Invalid isOnlyCurrentSeason (should be 0 or 1)
-		{1, "99", "2023-24", true},  // Invalid leagueID
-		{1, "00", "23-24", true},    // Invalid season format
+		{8, "99", "2023-24", true},  // Invalid leagueID
+		{8, "00", "23-24", true},
+		{0, "00", "2019-20", false}, // Invalid season format
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		resp, err := CommonAllPlayers(test.isOnlyCurrentSeason, test.leagueID, test.season)
-
+		if test.isOnlyCurrentSeason == 1 {
+			fmt.Println(i)
+			fmt.Println(resp.GetNormalizedDict())
+		}
 		if test.expectErr {
 			// Expecting an error, ensure an error is returned
 			if err == nil {

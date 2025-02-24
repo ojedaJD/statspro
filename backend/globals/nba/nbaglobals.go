@@ -196,6 +196,91 @@ func (r *NBAResponse) GetNormalizedDict() (map[string][]map[string]interface{}, 
 	return resultMap, nil
 }
 
+func (r *NBAResponse) GetNormalizedDict2() (map[string][]map[string]interface{}, error) {
+	resultSets, err := r.GetResultSets()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resultSets) == 0 {
+		return nil, fmt.Errorf("resultSets are empty")
+	}
+
+	// Ordered map to store processed data keyed by resultSet name
+	resultMap := make(map[string][]map[string]interface{})
+	var resultMutex sync.Mutex // Mutex to prevent race conditions
+
+	// WaitGroup to synchronize goroutines
+	var wg sync.WaitGroup
+
+	// Process each resultSet concurrently
+	for _, resultSet := range resultSets {
+		rs, ok := resultSet.(map[string]interface{})
+		if !ok {
+			continue // Skip invalid resultSets
+		}
+
+		// Get resultSet name
+		resultSetName, ok := rs["name"].(string)
+		if !ok || resultSetName == "" {
+			resultSetName = "Unknown" // Default name if missing
+		}
+
+		headers, ok := rs["headers"].([]interface{})
+		if !ok {
+			continue // Skip if headers are missing or invalid
+		}
+
+		rowSet, ok := rs["rowSet"].([]interface{})
+		if !ok {
+			continue // Skip if rowSet is missing or invalid
+		}
+
+		// Convert headers to []string
+		headerKeys := make([]string, len(headers))
+		for i, h := range headers {
+			if headerStr, ok := h.(string); ok {
+				headerKeys[i] = headerStr
+			} else {
+				headerKeys[i] = fmt.Sprintf("%v", h) // Convert non-string headers
+			}
+		}
+
+		wg.Add(1)
+		go func(headerKeys []string, rowSet []interface{}, resultSetName string) {
+			defer wg.Done()
+
+			normalizedData := make([]map[string]interface{}, len(rowSet)) // Maintain order
+
+			// Process rowSet while preserving order
+			for i, row := range rowSet {
+				rowValues, ok := row.([]interface{})
+				if !ok {
+					continue
+				}
+
+				rowMap := make(map[string]interface{})
+				for j, value := range rowValues {
+					if j < len(headerKeys) {
+						rowMap[headerKeys[j]] = value
+					}
+				}
+				normalizedData[i] = rowMap // Preserve row order
+			}
+
+			// Safely update the map
+			resultMutex.Lock()
+			resultMap[resultSetName] = normalizedData
+			resultMutex.Unlock()
+		}(headerKeys, rowSet, resultSetName)
+	}
+
+	// Wait for all goroutines to complete
+	wg.Wait()
+
+	return resultMap, nil
+}
+
 // GetAllHeaders extracts headers from all resultSets and returns them in a map.
 func (r *NBAResponse) GetAllHeaders() (map[string][]string, error) {
 	resultSets, err := r.GetResultSets()
@@ -432,6 +517,14 @@ func parseResponse(body io.ReadCloser, header http.Header) (interface{}, error) 
 			}
 		}()
 		reader = zlibReader
+	}
+
+	if header.Get("Content-Type") == "text/html; charset=utf-8" {
+		htmlContent, err := io.ReadAll(reader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read HTML response: %w", err)
+		}
+		return string(htmlContent), fmt.Errorf("NBA API returned HTML error page: %s", string(htmlContent))
 	}
 
 	// Decode JSON with UseNumber to avoid float precision issues

@@ -1,6 +1,7 @@
 package nba
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	client "sports_api/globals/nba"
@@ -47,6 +48,62 @@ func CommonAllPlayers(isOnlyCurrentSeason int, leagueID, season string) (*client
 	}
 
 	return client.NBASession.NBAGetRequest(endoints.CommonAllPlayer, params, "", nil)
+}
+
+type Player struct {
+	Name             string `json:"DISPLAY_FIRST_LAST"`
+	FromYear         string `json:"FROM_YEAR"`
+	PlayerID         int    `json:"PERSON_ID"`
+	IsActive         int    `json:"ROSTERSTATUS"`
+	TeamAbbreviation string `json:"TEAM_ABBREVIATION"`
+	TeamCity         string `json:"TEAM_CITY"`
+	TeamID           int    `json:"TEAM_ID"`
+	TeamName         string `json:"TEAM_NAME"`
+	ToYear           string `json:"TO_YEAR"`
+}
+
+func GetAllNBAPlayers() []Player {
+	players, err := CommonAllPlayers(1, "00", "2024-25")
+	if err != nil {
+		return nil
+	}
+
+	dict2, err := players.GetNormalizedDict2()
+
+	if err != nil {
+		return nil
+	}
+	currentSeasonPlayers := dict2["CommonAllPlayers"]
+	jsonData, err := json.Marshal(currentSeasonPlayers)
+	var player []Player
+	err = json.Unmarshal(jsonData, &player)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return player
+
+}
+
+func GetAllWNBAPlayers() []Player {
+	players, err := CommonAllPlayers(1, "10", "2024-25")
+	if err != nil {
+		return nil
+	}
+
+	dict2, err := players.GetNormalizedDict2()
+
+	if err != nil {
+		return nil
+	}
+	currentSeasonPlayers := dict2["CommonAllPlayers"]
+	jsonData, err := json.Marshal(currentSeasonPlayers)
+	var player []Player
+	err = json.Unmarshal(jsonData, &player)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return player
+
 }
 
 // validateCommonAllPlayersParams ensures all input parameters are valid.

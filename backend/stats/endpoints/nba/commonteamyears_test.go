@@ -37,6 +37,7 @@ func TestCommonTeamYears(t *testing.T) {
 			} else if resp.StatusCode != http.StatusOK {
 				t.Errorf("Unexpected response code: got %d, expected %d for input: %+v", resp.StatusCode, http.StatusOK, test)
 			} else {
+				fmt.Println(resp.GetNormalizedDict())
 				fmt.Printf("API call succeeded with HTTP 200 for input: %+v\n", test)
 			}
 		}
