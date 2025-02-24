@@ -12,7 +12,7 @@ func DraftCombineStats(leagueID, seasonYear string) (*client.NBAResponse, error)
 	if valid, err := helpers.ValidateLeagueID(leagueID); !valid {
 		return nil, err
 	}
-	if valid, err := helpers.ValidateSeasonYearOrAllTime(seasonYear); !valid {
+	if valid, err := helpers.ValidateSeason(seasonYear); !valid {
 		return nil, err
 	}
 
