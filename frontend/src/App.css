@@ -1,0 +1,106 @@
+/* App.css */
+
+/* Base styling from Create React App */
+.App {
+  text-align: center;
+  padding: 20px;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Homepage: Current Game Schedule Styling */
+.schedule-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.game-item a {
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+}
+
+/* Game Details: Players List Styling */
+.players-list {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.player-summary {
+  text-align: center;
+}
+
+/* Player Panel Styling (used in PlayerDetails and elsewhere) */
+.player-panel {
+  margin: 10px;
+}
+
+.player-panel img {
+  width: 200px; /* Adjust size as needed */
+  height: auto;
+}
+
+/* Player Details Page Styling */
+/* Container for player info and graph side by side */
+.player-details-page {
+  padding: 20px;
+  text-align: left;
+}
+
+.stats-container {
+  display: flex;
+  align-items: flex-start;  /* Align items at the top */
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* Left side: container for player's info */
+.player-panel-container {
+  flex: 0 0 30%;  /* Takes about 30% of the width */
+}
+
+/* Right side: container for the graph */
+.graph-container {
+  flex: 1;        /* Takes the remaining width */
+  border: 1px solid #ccc;
+  padding: 10px;
+  min-height: 300px; /* Optional: ensures a minimum height */
+}
