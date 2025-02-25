@@ -1,10 +1,15 @@
 package nba
 
 import (
+	"encoding/json"
 	"fmt"
 	models "sports_api/stats/endpoints/nba"
 )
 
+type Matchup struct {
+	HomeTeam *Team
+	AwayTeam *Team
+}
 type Team struct {
 	ID                int    `json:"id"`
 	Abbreviation      string `json:"abbreviation"`
@@ -112,11 +117,44 @@ func GetNBATeamsWithPlayers() Teams {
 		return GetNBATeams()
 	}
 	for _, player := range players {
-		fmt.Println(player.TeamID)
 		nbaTeams.GetTeamByID(player.TeamID).addRosterMember(player)
 	}
-	for _, v := range nbaTeams {
-		fmt.Println(v.Abbreviation, len(v.Roster))
-	}
+
 	return nbaTeams
+}
+
+func GetNBAMatchups() []Matchup {
+	gamesToday := models.GetNBAGamesToday()
+	if gamesToday == nil {
+		return nil
+	}
+
+	// Fetch the teams list once to prevent redundant calls
+	nbaTeams := GetNBATeamsWithPlayers()
+	var matchups []Matchup // Initialize slice to store matchups
+
+	for _, m := range gamesToday {
+		homeTeamID, err1 := m["HOME_TEAM_ID"].(json.Number).Int64()
+		awayTeamID, err2 := m["VISITOR_TEAM_ID"].(json.Number).Int64()
+
+		if err1 != nil || err2 != nil {
+			fmt.Println("Error converting team IDs:", err1, err2)
+			continue
+		}
+
+		homeTeam := nbaTeams.GetTeamByID(int(homeTeamID))
+		awayTeam := nbaTeams.GetTeamByID(int(awayTeamID))
+
+		if homeTeam == nil || awayTeam == nil {
+			fmt.Printf("Warning: Could not find teams for match %d vs %d\n", homeTeamID, awayTeamID)
+			continue
+		}
+
+		matchups = append(matchups, Matchup{
+			HomeTeam: homeTeam,
+			AwayTeam: awayTeam,
+		})
+	}
+
+	return matchups
 }

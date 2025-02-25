@@ -15,6 +15,10 @@ func SetupNBARoutes(router *gin.Engine) {
 
 			c.JSON(http.StatusOK, static.GetNBATeamsWithPlayers())
 		})
+		nbaGroup.GET("/matchups", func(c *gin.Context) {
+
+			c.JSON(http.StatusOK, static.GetNBAMatchups())
+		})
 
 		nbaGroup.GET("/players/current", func(c *gin.Context) {
 			players := nba.GetAllNBAPlayers()

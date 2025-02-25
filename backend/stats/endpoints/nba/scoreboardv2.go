@@ -26,3 +26,16 @@ func ScoreboardV2(dayOffset int, gameDate *time.Time, leagueID string) (*client.
 
 	return client.NBASession.NBAGetRequest(endpoints.ScoreboardV2, params, "", nil)
 }
+
+func GetNBAGamesToday() []map[string]interface{} {
+	gameDate, _ := time.Parse("2006-01-02", "2025-02-25")
+	scoreBoard, err := ScoreboardV2(0, &gameDate, "00")
+
+	dict2, err := scoreBoard.GetNormalizedDict2()
+	if err != nil {
+		return nil
+	}
+
+	return dict2["GameHeader"]
+
+}
