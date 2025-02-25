@@ -13,7 +13,7 @@ func SetupWNBARoutes(router *gin.Engine) {
 	{
 		wnbaGroup.GET("/teams", func(c *gin.Context) {
 
-			c.JSON(http.StatusOK, static.GetWNBATeams())
+			c.JSON(http.StatusOK, static.GetWNBATeamsWithPlayers())
 		})
 
 		wnbaGroup.GET("/players/current", func(c *gin.Context) {
