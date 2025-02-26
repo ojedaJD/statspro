@@ -1,7 +1,7 @@
 // components/PlayerDetails.js
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import PlayerPanel from './nba/PlayerPanel';
+import PlayerPanel from './PlayerPanel';
 
 const PlayerDetails = () => {
     const { playerId } = useParams();

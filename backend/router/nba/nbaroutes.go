@@ -19,6 +19,10 @@ func SetupNBARoutes(router *gin.Engine) {
 
 			c.JSON(http.StatusOK, static.GetNBAMatchups())
 		})
+		nbaGroup.GET("/matchups/players", func(c *gin.Context) {
+
+			c.JSON(http.StatusOK, static.GetActivePlayerForToday())
+		})
 
 		nbaGroup.GET("/players/current", func(c *gin.Context) {
 			players := nba.GetAllNBAPlayers()
@@ -35,11 +39,10 @@ func SetupNBARoutes(router *gin.Engine) {
 			season := c.Query("season")
 			seasonType := c.Query("seasonType")
 
-			var leaguePtr *string
-			*leaguePtr = "00"
+			league := "00"
 
 			// Call PlayerGameLog function
-			result, err := nba.PlayerGameLog(playerID, season, seasonType, leaguePtr)
+			result, err := nba.PlayerGameLog(playerID, season, seasonType, &league)
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return

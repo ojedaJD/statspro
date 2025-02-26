@@ -99,7 +99,7 @@ func GetWNBATeamsWithPlayers() Teams {
 	wnbaTeams := GetWNBATeams()
 	players := models.GetAllWNBAPlayers()
 	if players == nil || len(players) == 0 {
-		return GetWNBATeams()
+		return wnbaTeams
 	}
 	for _, player := range players {
 		fmt.Println(player.TeamID)
@@ -114,7 +114,7 @@ func GetNBATeamsWithPlayers() Teams {
 	nbaTeams := GetNBATeams()
 	players := models.GetAllNBAPlayers()
 	if players == nil || len(players) == 0 {
-		return GetNBATeams()
+		return nbaTeams
 	}
 	for _, player := range players {
 		nbaTeams.GetTeamByID(player.TeamID).addRosterMember(player)
@@ -157,4 +157,14 @@ func GetNBAMatchups() []Matchup {
 	}
 
 	return matchups
+}
+
+func GetActivePlayerForToday() []models.Player {
+	matchups := GetNBAMatchups()
+	var players []models.Player
+	for _, matchup := range matchups {
+		players = append(players, matchup.AwayTeam.Roster...)
+		players = append(players, matchup.HomeTeam.Roster...)
+	}
+	return players
 }

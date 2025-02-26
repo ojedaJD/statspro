@@ -1,4 +1,4 @@
-// components/nba/PlayerPanel.js
+// components/nba/PlayerPanel.jsx
 import React from "react";
 
 const PlayerPanel = ({ playerName, imageUrl }) => {
