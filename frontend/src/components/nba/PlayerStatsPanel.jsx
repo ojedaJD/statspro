@@ -73,7 +73,7 @@ const PlayerStatsPanel = ({ player, onBack }) => {
     };
 
     // Color palette (Green, Red, Blue, Yellow)
-    const colorPalette = ["#28a745", "#dc3545", "#007bff"];
+    const colorPalette = ["#28a745", "#dc3545"];
 
     return (
         <Box sx={{ p: 3, textAlign: "center" }}>
