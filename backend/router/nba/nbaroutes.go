@@ -41,18 +41,14 @@ func SetupNBARoutes(router *gin.Engine) {
 
 			league := "00"
 
-			// Call PlayerGameLog function
-			result, err := nba.PlayerGameLog(playerID, season, seasonType, &league)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-				return
-			}
-			dict, err := result.GetNormalizedDict2()
-			if err != nil {
+			gamelogs := nba.GetPlayerGameLog(playerID, season, seasonType, &league)
+
+			if gamelogs == nil || len(gamelogs) == 0 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "No Game Logs"})
 				return
 			}
 
-			c.JSON(http.StatusOK, dict)
+			c.JSON(http.StatusOK, gamelogs)
 		})
 
 	}
