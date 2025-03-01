@@ -3,6 +3,7 @@ package nba
 import (
 	"errors"
 	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -24,6 +25,7 @@ var (
 	validPlayerScope         = regexp.MustCompile(`^(All Players|Rookies)$`)
 	validSeasonYear          = regexp.MustCompile(`^\d{4}$`) // Ensures "YYYY" format (e.g., "2019")
 	validSeasonYearOrAllTime = regexp.MustCompile(`^(\d{4}-\d{2})|(All Time)$`)
+	validMeasureTypes        = map[string]struct{}{"Usage": struct{}{}, "Scoring": struct{}{}, "Opponent": struct{}{}, "Misc": struct{}{}, "Defense": struct{}{}, "Four Factors": struct{}{}, "Advanced": struct{}{}, "Base": struct{}{}}
 )
 
 // FormatDateToString converts a time.Time object to a "YYYY-MM-DD" string format.
@@ -213,4 +215,16 @@ func ValidateSeasonYear(seasonYear string) (bool, error) {
 		return false, errors.New("invalid SeasonYear: must be a four-digit year (e.g., '2019')")
 	}
 	return true, nil
+}
+
+func ValidateMeasureType(measureType string) (bool, error) {
+	if _, ok := validMeasureTypes[measureType]; !ok {
+		return false, errors.New("invalid measure type")
+	}
+	return true, nil
+
+}
+
+func IntToString(i int) string {
+	return strconv.Itoa(i)
 }

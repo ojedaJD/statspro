@@ -9,7 +9,7 @@ import (
 
 func TestScoreboardV2(t *testing.T) {
 	validLeagueID := "00"
-	validDayOffset := -19
+	validDayOffset := -1
 
 	gameDate1, _ := time.Parse("2006-01-02", "2023-01-01")
 	gameDate2, _ := time.Parse("2006-01-02", "2023-12-31")

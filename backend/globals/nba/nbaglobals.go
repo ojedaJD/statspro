@@ -3,11 +3,14 @@ package nba
 import (
 	"compress/gzip"
 	"compress/zlib"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
+	"sports_api/db"
 	"sync"
 	"time"
 )
@@ -428,10 +431,28 @@ func (c *Client) SetProxy(proxyURL string) {
 
 // NBA Get Request constructs and executes an API request.
 func (c *Client) NBAGetRequest(endpoint string, params map[string]string, referer string, customHeaders map[string]string) (*NBAResponse, error) {
+	ctx := context.Background()
 
 	fullURL, err := prepareURL(c.BaseURL, endpoint, params)
 	if err != nil {
 		return nil, fmt.Errorf("error constructing request URL: %w", err)
+	}
+
+	redisClient := db.GetRedisClient()
+
+	// Check if response is cached in Redis
+	cachedData, err := redisClient.Get(ctx, fullURL)
+	if err == nil {
+		// If cache exists, parse it and return
+		var cachedResponse NBAResponse
+		err := json.Unmarshal([]byte(cachedData), &cachedResponse)
+		if err == nil {
+			log.Println("Cache hit for URL:", fullURL)
+			return &cachedResponse, nil
+		}
+		log.Println("Cache data invalid, making new request")
+	} else {
+		log.Println("Cache miss for URL:", fullURL)
 	}
 
 	// Create request
@@ -473,14 +494,25 @@ func (c *Client) NBAGetRequest(endpoint string, params map[string]string, refere
 	if err != nil {
 		return nil, err
 	}
-	// Return structured response
-	return &NBAResponse{
+	response := &NBAResponse{
 		StatusCode: resp.StatusCode,
 		Status:     resp.Status,
 		Data:       data,
 		URL:        fullURL,
 		Headers:    resp.Header,
-	}, nil
+	}
+
+	// Serialize response to JSON for caching
+	responseJSON, err := json.Marshal(response)
+	if err == nil {
+		// Save to Redis with a 1-day expiration
+		err = redisClient.Save(ctx, fullURL, responseJSON, 24*time.Hour)
+		if err != nil {
+			log.Println("Failed to cache response in Redis:", err)
+		}
+	}
+
+	return response, nil
 }
 
 // parseResponse reads and decodes the HTTP response body based on content encoding.

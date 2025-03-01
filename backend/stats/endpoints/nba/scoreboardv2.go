@@ -1,6 +1,7 @@
 package nba
 
 import (
+	"fmt"
 	client "sports_api/globals/nba"
 	helpers "sports_api/helpers/nba"
 	endpoints "sports_api/urls/nba"
@@ -28,14 +29,14 @@ func ScoreboardV2(dayOffset int, gameDate *time.Time, leagueID string) (*client.
 }
 
 func GetNBAGamesToday() []map[string]interface{} {
-	gameDate, _ := time.Parse("2006-01-02", "2025-02-25")
+	gameDate := time.Now()
 	scoreBoard, err := ScoreboardV2(0, &gameDate, "00")
 
 	dict2, err := scoreBoard.GetNormalizedDict2()
 	if err != nil {
 		return nil
 	}
-
+	fmt.Println(dict2["GameHeader"])
 	return dict2["GameHeader"]
 
 }

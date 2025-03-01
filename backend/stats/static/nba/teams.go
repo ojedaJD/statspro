@@ -3,7 +3,9 @@ package nba
 import (
 	"encoding/json"
 	"fmt"
+	odds "sports_api/odds/nba"
 	models "sports_api/stats/endpoints/nba"
+	"strings"
 )
 
 type Matchup struct {
@@ -20,6 +22,15 @@ type Team struct {
 	State             string `json:"state"`
 	ChampionshipYears []int  `json:"championship_years"`
 	Roster            []models.Player
+}
+
+func (t *Team) GetPlayerByName(name string) *models.Player {
+	for i := range t.Roster {
+		if t.Roster[i].Name == name {
+			return &t.Roster[i]
+		}
+	}
+	return nil
 }
 
 type Teams []Team
@@ -113,11 +124,24 @@ func GetWNBATeamsWithPlayers() Teams {
 func GetNBATeamsWithPlayers() Teams {
 	nbaTeams := GetNBATeams()
 	players := models.GetAllNBAPlayers()
+
 	if players == nil || len(players) == 0 {
 		return nbaTeams
 	}
 	for _, player := range players {
-		nbaTeams.GetTeamByID(player.TeamID).addRosterMember(player)
+		if v, ok := weirdNameMap[player.Name]; ok {
+			player.Name = v
+		} else {
+			if strings.HasSuffix(player.Name, "Jr.") {
+				// Remove just the trailing period
+				player.Name = strings.TrimSuffix(player.Name, ".")
+			}
+		}
+		team := nbaTeams.GetTeamByID(player.TeamID)
+		if team != nil {
+			team.addRosterMember(player)
+		}
+
 	}
 
 	return nbaTeams
@@ -159,8 +183,87 @@ func GetNBAMatchups() []Matchup {
 	return matchups
 }
 
+var weirdNameMap = map[string]string{
+	"Nikola Jokić":       "Nikola Jokic",
+	"Jimmy Butler III":   "Jimmy Butler",
+	"Isaiah Stewart":     "Isaiah Stewart II",
+	"Dennis Schröder":    "Dennis Schroder",
+	"Kristaps Porziņģis": "Kristaps Porzingis",
+	"Tim Hardaway Jr.":   "Tim Hardaway Jr",
+	"Luka Dončić":        "Luka Doncic",
+	"CJ McCollum":        "C.J. McCollum",
+	"Danté Exum":         "Dante Exum",
+	"Nick Smith Jr.":     "Nick Smith Jr",
+	"RJ Barrett":         "R.J. Barrett",
+	"Nic Claxton":        "Nicolas Claxton",
+}
+
+// GetNBAMatchupsWithOdds Get Today's Game and get acommpanying odds for the matchup
+func GetNBAMatchupsWithOdds() []Matchup {
+	gamesToday := models.GetNBAGamesToday()
+	matchOdds, err := odds.GetPlayerProps()
+	fullSeasonStats := models.GetAllNBAPlayerStatsFullSeason()
+	if err != nil {
+		return nil
+	}
+	if gamesToday == nil {
+		return nil
+	}
+
+	// Fetch the teams list once to prevent redundant calls
+	nbaTeams := GetNBATeamsWithPlayers()
+	var matchups []Matchup // Initialize slice to store matchups
+
+	for _, m := range gamesToday {
+		fmt.Printf("%T", m["HOME_TEAM_ID"])
+		homeTeamID := int(m["HOME_TEAM_ID"].(float64))
+		awayTeamID := int(m["VISITOR_TEAM_ID"].(float64))
+		homeTeam := nbaTeams.GetTeamByID(homeTeamID)
+		awayTeam := nbaTeams.GetTeamByID(awayTeamID)
+
+		if homeTeam == nil || awayTeam == nil {
+			fmt.Printf("Warning: Could not find teams for match %d vs %d\n", homeTeamID, awayTeamID)
+			continue
+		}
+
+		t := matchOdds.GetOddsByHomeAndAwayTeam(homeTeam.FullName, awayTeam.FullName)
+		fmt.Println(t)
+		for _, bookmaker := range t.Bookmakers {
+			for _, market := range bookmaker.Markets {
+				for _, outcome := range market.Outcomes {
+					if homeTeam.GetPlayerByName(outcome.Description) != nil {
+						player := homeTeam.GetPlayerByName(outcome.Description).SetOutcome(bookmaker.Key, market.Key, outcome.Name, outcome.Point, outcome.Price)
+						logs := fullSeasonStats.GetPlayerGameLog(player.PlayerID)
+						if logs != nil && len(logs) > 0 {
+							player.SetCurrentSeasonLogs(logs).SetOpponentAbbreviation(awayTeam.Abbreviation)
+						}
+
+					} else if awayTeam.GetPlayerByName(outcome.Description) != nil {
+						player := awayTeam.GetPlayerByName(outcome.Description).SetOutcome(bookmaker.Key, market.Key, outcome.Name, outcome.Point, outcome.Price)
+						logs := fullSeasonStats.GetPlayerGameLog(player.PlayerID)
+						if logs != nil && len(logs) > 0 {
+							player.SetCurrentSeasonLogs(logs).SetOpponentAbbreviation(homeTeam.Abbreviation)
+						}
+
+					} else {
+						fmt.Println("No Player Found For", outcome.Description)
+					}
+				}
+
+			}
+		}
+
+		matchups = append(matchups, Matchup{
+			HomeTeam: homeTeam,
+			AwayTeam: awayTeam,
+		})
+	}
+
+	return matchups
+}
+
 func GetActivePlayerForToday() []models.Player {
-	matchups := GetNBAMatchups()
+	matchups := GetNBAMatchupsWithOdds()
 	var players []models.Player
 	for _, matchup := range matchups {
 		players = append(players, matchup.AwayTeam.Roster...)

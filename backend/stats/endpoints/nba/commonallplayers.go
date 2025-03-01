@@ -51,15 +51,91 @@ func CommonAllPlayers(isOnlyCurrentSeason int, leagueID, season string) (*client
 }
 
 type Player struct {
-	Name             string `json:"DISPLAY_FIRST_LAST"`
-	FromYear         string `json:"FROM_YEAR"`
-	PlayerID         int    `json:"PERSON_ID"`
-	IsActive         int    `json:"ROSTERSTATUS"`
-	TeamAbbreviation string `json:"TEAM_ABBREVIATION"`
-	TeamCity         string `json:"TEAM_CITY"`
-	TeamID           int    `json:"TEAM_ID"`
-	TeamName         string `json:"TEAM_NAME"`
-	ToYear           string `json:"TO_YEAR"`
+	Name                 string                          `json:"DISPLAY_FIRST_LAST"`
+	FromYear             string                          `json:"FROM_YEAR"`
+	PlayerID             int                             `json:"PERSON_ID"`
+	IsActive             int                             `json:"ROSTERSTATUS"`
+	TeamAbbreviation     string                          `json:"TEAM_ABBREVIATION"`
+	TeamCity             string                          `json:"TEAM_CITY"`
+	TeamID               int                             `json:"TEAM_ID"`
+	TeamName             string                          `json:"TEAM_NAME"`
+	ToYear               string                          `json:"TO_YEAR"`
+	Odds                 map[string]map[string][]Outcome `json:"odds,omitempty"`
+	CurrentSeasonLogs    BaseGameLogSlice                // OutcomeType -> BookMaker -> Outcome
+	OpponentAbbreviation string
+}
+
+func (r *Player) SetOpponentAbbreviation(str string) {
+	r.OpponentAbbreviation = str
+}
+
+// SetOutcome method to add/update an outcome for a player
+func (p *Player) SetOutcome(bookmaker, outcomeType, name string, point float64, price int) *Player {
+	// Initialize Odds map if nil
+
+	if p.Odds == nil {
+		p.Odds = make(map[string]map[string][]Outcome)
+	}
+
+	// Initialize nested map for the bookmaker if nil
+	if p.Odds[outcomeType] == nil {
+		p.Odds[outcomeType] = make(map[string][]Outcome)
+	}
+
+	// Create a new outcome
+	outcome := Outcome{
+		Name:  name,
+		Point: point,
+		Price: price,
+	}
+
+	// Append the outcome to the existing slice
+	p.Odds[outcomeType][bookmaker] = append(p.Odds[outcomeType][bookmaker], outcome)
+
+	return p
+}
+
+func (p *Player) SetCurrentSeasonLogs(seasonLog BaseGameLogSlice) *Player {
+	if len(seasonLog) == 0 || seasonLog == nil {
+		fmt.Println("No logs found for ", p.Name)
+		return nil
+	}
+	p.CurrentSeasonLogs = seasonLog
+	return p
+
+}
+
+type Outcome struct {
+	Name  string  `json:"name"`
+	Point float64 `json:"point"`
+	Price int     `json:"price"`
+}
+
+// Convert American odds to implied probability
+func americanOddsToProbability(odds int) float64 {
+	if odds > 0 {
+		return float64(100) / float64(odds+100)
+	}
+	return float64(-odds) / float64(-odds+100)
+}
+
+// Calculate the optimal stake distribution for arbitrage betting
+func calculateArbitrageBets(price1, price2 int, totalBankroll float64) (bool, float64, float64, float64) {
+	prob1 := americanOddsToProbability(price1)
+	prob2 := americanOddsToProbability(price2)
+	fmt.Println(prob1, prob2)
+	// Arbitrage condition: 1/prob1 + 1/prob2 < 1
+	arbValue := (1/prob1 + 1/prob2)
+	if arbValue >= 1 {
+		return false, 0, 0, 0 // No arbitrage opportunity
+	}
+
+	// Optimal stake calculation
+	stake1 := (totalBankroll * (1 / prob1)) / arbValue
+	stake2 := (totalBankroll * (1 / prob2)) / arbValue
+	profitPercentage := (1 - arbValue) * 100
+
+	return true, stake1, stake2, profitPercentage
 }
 
 func GetAllNBAPlayers() []Player {

@@ -26,5 +26,6 @@ var (
 	FranchisePlayers                  = "franchiseplayers"
 	GameRotation                      = "gamerotation"
 	PlayerGameLog                     = "playergamelog"
+	PlayerGameLogs                    = "playergamelogs"
 	ScoreboardV2                      = "scoreboardv2"
 )
