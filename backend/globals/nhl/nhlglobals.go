@@ -41,6 +41,10 @@ type Client struct {
 	Proxy          string
 }
 
+func (c *Client) SetBaseUrl(newUrl string) {
+	c.BaseURL = newUrl
+}
+
 // NewNHLClient initializes and returns an NHLClient instance.
 func NewNHLClient() *Client {
 	return &Client{

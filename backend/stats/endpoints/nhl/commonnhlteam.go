@@ -11,7 +11,7 @@ func GetNHlTeams() (*nhl.NHLResponse, error) {
 		"include": "lastSeason.id",
 	}
 
-	return nhl.NHLSession.NHLGetRequest("stats/rest/en/franchise", params, "", nil)
+	return nhl.NHLSession.NHLGetRequest("", params, "", nil)
 }
 
 func GetAndParseNHLTeams() {

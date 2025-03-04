@@ -30,6 +30,7 @@ const NBAPage = () => {
 
     // Build a list of game labels dynamically
     const gameOptions = ['All Games'];
+    if (oddsData)
     oddsData.forEach(game => {
         const gameLabel = `${game.AwayTeam.abbreviation} @ ${game.HomeTeam.abbreviation}`;
         if (!gameOptions.includes(gameLabel)) {

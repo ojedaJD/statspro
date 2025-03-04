@@ -38,7 +38,6 @@ func GetAllNBAEvents() (*odds.OddsApiResponse, error) {
 func GetandUnmarshallAllNBAEvents() ([]OddsEvent, error) {
 	// Fetch NBA events
 	response, err := GetAllNBAEvents()
-	fmt.Println(response.Headers)
 	if err != nil {
 		return nil, err
 	}

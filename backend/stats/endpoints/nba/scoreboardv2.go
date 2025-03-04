@@ -1,7 +1,6 @@
 package nba
 
 import (
-	"fmt"
 	client "sports_api/globals/nba"
 	helpers "sports_api/helpers/nba"
 	endpoints "sports_api/urls/nba"
@@ -36,7 +35,6 @@ func GetNBAGamesToday() []map[string]interface{} {
 	if err != nil {
 		return nil
 	}
-	fmt.Println(dict2["GameHeader"])
 	return dict2["GameHeader"]
 
 }

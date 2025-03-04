@@ -90,6 +90,7 @@ const TableFilterBar = ({ filters, onFilterChange, gameOptions }) => {
 
 // Extract which box‐score field to check, given the propType
 function getBoxScoreValueFromLog(gameLog, propType) {
+    if (gameLog)
     switch (propType) {
         case 'player_points':
             return gameLog.PTS;

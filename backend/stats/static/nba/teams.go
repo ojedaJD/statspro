@@ -227,7 +227,9 @@ func GetNBAMatchupsWithOdds() []Matchup {
 		}
 
 		t := matchOdds.GetOddsByHomeAndAwayTeam(homeTeam.FullName, awayTeam.FullName)
-		fmt.Println(t)
+		if t == nil {
+			continue
+		}
 		for _, bookmaker := range t.Bookmakers {
 			for _, market := range bookmaker.Markets {
 				for _, outcome := range market.Outcomes {
