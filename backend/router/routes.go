@@ -3,7 +3,9 @@ package router
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	router "sports_api/router/nba"
+	"sports_api/router/mlb"
+	"sports_api/router/nba"
+	"sports_api/router/nhl"
 	"time"
 )
 
@@ -22,8 +24,9 @@ func SetupRouter() *gin.Engine {
 	}))
 
 	// Setup routes
-	router.SetupNBARoutes(r)
-	router.SetupWNBARoutes(r)
-
+	nba.SetupNBARoutes(r)
+	nba.SetupWNBARoutes(r)
+	mlb.SetupMLBRoutes(r)
+	nhl.SetupNHLRoutes(r)
 	return r
 }

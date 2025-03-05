@@ -76,7 +76,6 @@ const reversePropsMapping = Object.entries(propTypeMapping).reduce((acc, [key, v
     return acc;
 }, {});
 
-// This array will be replaced by actual bookmakers from your data
 const bookmakers = [
     { value: 'All', label: 'All Bookmakers' },
     { value: 'draftkings', label: 'DraftKings' },
@@ -84,7 +83,7 @@ const bookmakers = [
 ];
 
 const PlayerDetailView = ({ player, onBack, initialFilters = {} }) => {
-    // Get initial prop type from filters or default to 'Pts'
+
     const initialPropType = reversePropsMapping[initialFilters.propType] || 'Pts';
     const [selectedProp, setSelectedProp] = useState(initialPropType);
     const [selectedSplit, setSelectedSplit] = useState('Season');

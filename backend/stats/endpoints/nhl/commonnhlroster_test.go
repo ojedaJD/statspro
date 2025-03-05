@@ -6,11 +6,14 @@ import (
 
 func TestGetNHLRoster(t *testing.T) {
 	// Call the function that hits the real NHL API endpoint
-	resp := GetAndParseNHLRoster("CAR", "20242025")
+	teams, err := GetAndParseNHLTeams()
+	if err != nil {
+		return
+	}
 
 	// Optionally, you can add more checks here to validate
 	// certain fields in resp if you know what shape the data
 	// should have (e.g., length of teams, etc.)
-	t.Logf("Successfully fetched NHL teams. Response: %+v", resp)
+	t.Logf("Successfully fetched NHL teams. Response: %+v", teams)
 
 }

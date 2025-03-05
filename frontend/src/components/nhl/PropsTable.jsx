@@ -16,7 +16,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import { styled } from '@mui/material/styles';
 
-import { defaultFilters, getGameOptions, filterOddsData, propTypes, bookmakers } from '../utils/filters';
+import { defaultFilters, getGameOptions, filterOddsData, propTypes, bookmakers } from '../../utils/nhlfilters';
 
 // ---- NEW CODE: We can define a custom style or use inline style for coloring table cells.
 const ColoredTableCell = styled(TableCell)(({ theme, colorbg }) => ({
@@ -88,32 +88,30 @@ const TableFilterBar = ({ filters, onFilterChange, gameOptions }) => {
  *   HELPER FUNCTIONS
  *  ============================== */
 
+//
+// 'player_points': 'Points',
+//     'player_power_play_points': 'Power Play Points',
+//     'player_assists': 'Assists',
+//     'player_goals': 'Goals',
+//     'player_total_saves': 'Total Saves',
+//
 // Extract which box‐score field to check, given the propType
 function getBoxScoreValueFromLog(gameLog, propType) {
     if (gameLog)
     switch (propType) {
         case 'player_points':
-            return gameLog.PTS;
-        case 'player_rebounds':
-            return gameLog.REB;
+            return gameLog.points;
+        case 'player_power_play_points':
+            return gameLog.powerPlayPoints;
+        case 'player_goals':
+            return gameLog.goals;
         case 'player_assists':
-            return gameLog.AST;
-        case 'player_points_rebounds_assists':
-            return gameLog.PTS + gameLog.REB + gameLog.AST;
-        case 'player_points_rebounds':
-            return gameLog.PTS + gameLog.REB;
-        case 'player_points_assists':
-            return gameLog.PTS + gameLog.AST;
-        case 'player_steals':
-            return gameLog.STL;
-        case 'player_blocks':
-            return gameLog.BLK;
-        case 'player_turnovers':
-            return gameLog.TOV;
-        case 'player_threes':
-            return gameLog.FG3M;
+            return gameLog.assists;
+        case 'player_total_saves':
+            return gameLog.shotsAgainst - gameLog.goalsAgainst;
+
         default:
-            return 0;
+            return 0
     }
 }
 
@@ -252,14 +250,13 @@ function getPlayerRows(oddsData, propType, bookMaker) {
             game.HomeTeam.Roster.forEach(player => {
                 if (player.odds && player.odds[propType]) {
                     rows.push({
-                        id: player.PERSON_ID,
+                        id: player.id,
                         player,
-                        team: game.HomeTeam.abbreviation,
-                        teamName: game.HomeTeam.nickname,
+                        team: game.Home.Abbreviation,
                         odds: bookMaker === 'All'
                             ? player.odds[propType]
                             : { [bookMaker]: player.odds[propType][bookMaker] || [] },
-                        game: `${game.AwayTeam.abbreviation} @ ${game.HomeTeam.abbreviation}`
+                        game: `${game.Away.Abbreviation} @ ${game.Home.Abbreviation}`
                     });
                 }
             });
@@ -270,14 +267,13 @@ function getPlayerRows(oddsData, propType, bookMaker) {
             game.AwayTeam.Roster.forEach(player => {
                 if (player.odds && player.odds[propType]) {
                     rows.push({
-                        id: player.PERSON_ID,
+                        id: player.id,
                         player,
-                        team: game.AwayTeam.abbreviation,
-                        teamName: game.AwayTeam.nickname,
+                        team: game.Away.Abbreviation,
                         odds: bookMaker === 'All'
                             ? player.odds[propType]
                             : { [bookMaker]: player.odds[propType][bookMaker] || [] },
-                        game: `${game.AwayTeam.abbreviation} @ ${game.HomeTeam.abbreviation}`
+                        game: `${game.Away.Abbreviation} @ ${game.Home.Abbreviation}`
                     });
                 }
             });
@@ -286,10 +282,18 @@ function getPlayerRows(oddsData, propType, bookMaker) {
     return rows;
 }
 
+function getPlayerLogs(player) {
+    // If a player is a goalie, they'll typically have "GoalieLogs".
+    // If a player is a skater, they'll have "GameLogs".
+    // You can adapt this if your data structure is different.
+    return player.GoalieLogs ?? player.GameLogs ?? [];
+}
+
+
 /** ==========================
  *   MAIN COMPONENT
  * ========================== */
-const PropsTable = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
+const PropsTable = ({ oddsData, onPlayerSelect }) => {
     const [order, setOrder] = useState('asc');
     const [orderBy, setOrderBy] = useState('name');
     const [tableFilters, setTableFilters] = useState(defaultFilters);
@@ -297,7 +301,6 @@ const PropsTable = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
     const handleFilterChange = (filterType, value) => {
         setTableFilters((prev) => {
             const newFilters = { ...prev, [filterType]: value };
-            updateGlobalFilters({ [filterType]: value }); // Only updates global reference
             return newFilters;
         });
     };
@@ -324,12 +327,16 @@ const PropsTable = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
             let aValue, bValue;
             switch (orderBy) {
                 case 'player':
-                    aValue = a.player.DISPLAY_FIRST_LAST;
-                    bValue = b.player.DISPLAY_FIRST_LAST;
+                    aValue = `${a.player.firstName.default} ${a.player.lastName.default}`;
+                    bValue = `${b.player.firstName.default} ${b.player.lastName.default}`;
                     break;
                 case 'team':
                     aValue = a.team;
                     bValue = b.team;
+                    break;
+                case 'position':
+                    aValue = a.player.positionCode;
+                    bValue = b.player.positionCode;
                     break;
                 case 'line':
                     aValue = parseFloat(getPropLine(a)) || 0;
@@ -348,36 +355,36 @@ const PropsTable = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
                 case 'hitSeason': {
                     const lineA = parseFloat(getPropLine(a)) || 0;
                     const lineB = parseFloat(getPropLine(b)) || 0;
-                    aValue = calcHitFraction(a.player.CurrentSeasonLogs||[], lineA, tableFilters.propType) * 100;
-                    bValue = calcHitFraction(b.player.CurrentSeasonLogs||[], lineB, tableFilters.propType) * 100;
+                    aValue = calcHitFraction(getPlayerLogs(a.player), lineA, tableFilters.propType) * 100;
+                    bValue = calcHitFraction(getPlayerLogs(b.player), lineB, tableFilters.propType) * 100;
                     break;
                 }
                 case 'hitL20': {
                     const lineA = parseFloat(getPropLine(a)) || 0;
                     const lineB = parseFloat(getPropLine(b)) || 0;
-                    aValue = calcHitFraction(a.player.CurrentSeasonLogs||[], lineA, tableFilters.propType, 20)*100;
-                    bValue = calcHitFraction(b.player.CurrentSeasonLogs||[], lineB, tableFilters.propType, 20)*100;
+                    aValue = calcHitFraction(getPlayerLogs(a.player), lineA, tableFilters.propType, 20)*100;
+                    bValue = calcHitFraction(getPlayerLogs(b.player), lineB, tableFilters.propType, 20)*100;
                     break;
                 }
                 case 'hitL10': {
                     const lineA = parseFloat(getPropLine(a)) || 0;
                     const lineB = parseFloat(getPropLine(b)) || 0;
-                    aValue = calcHitFraction(a.player.CurrentSeasonLogs||[], lineA, tableFilters.propType, 10)*100;
-                    bValue = calcHitFraction(b.player.CurrentSeasonLogs||[], lineB, tableFilters.propType, 10)*100;
+                    aValue = calcHitFraction(getPlayerLogs(a.player), lineA, tableFilters.propType, 10)*100;
+                    bValue = calcHitFraction(getPlayerLogs(b.player), lineB, tableFilters.propType, 10)*100;
                     break;
                 }
                 case 'hitL5': {
                     const lineA = parseFloat(getPropLine(a)) || 0;
                     const lineB = parseFloat(getPropLine(b)) || 0;
-                    aValue = calcHitFraction(a.player.CurrentSeasonLogs||[], lineA, tableFilters.propType, 5)*100;
-                    bValue = calcHitFraction(b.player.CurrentSeasonLogs||[], lineB, tableFilters.propType, 5)*100;
+                    aValue = calcHitFraction(getPlayerLogs(a.player), lineA, tableFilters.propType, 5)*100;
+                    bValue = calcHitFraction(getPlayerLogs(b.player), lineB, tableFilters.propType, 5)*100;
                     break;
                 }
                 case 'streak': {
                     const lineA = parseFloat(getPropLine(a)) || 0;
                     const lineB = parseFloat(getPropLine(b)) || 0;
-                    aValue = calcHitStreak(a.player.CurrentSeasonLogs||[], lineA, tableFilters.propType);
-                    bValue = calcHitStreak(b.player.CurrentSeasonLogs||[], lineB, tableFilters.propType);
+                    aValue = calcHitStreak(getPlayerLogs(a.player), lineA, tableFilters.propType);
+                    bValue = calcHitStreak(getPlayerLogs(b.player), lineB, tableFilters.propType);
                     break;
                 }
                 default:
@@ -400,15 +407,10 @@ const PropsTable = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
     const getPropTypeLabel = () => {
         const propTypeMap = {
             'player_points': 'Points',
-            'player_rebounds': 'Rebounds',
+            'player_power_play_points': 'Power Play Points',
             'player_assists': 'Assists',
-            'player_points_rebounds_assists': 'PRA',
-            'player_points_rebounds': 'Points+Reb',
-            'player_points_assists': 'Points+Ast',
-            'player_steals': 'Steals',
-            'player_blocks': 'Blocks',
-            'player_turnovers': 'Turnovers',
-            'player_threes': '3PM'
+            'player_goals': 'Goals',
+            'player_total_saves': 'Total Saves',
         };
         return propTypeMap[tableFilters.propType] || tableFilters.propType;
     };
@@ -436,7 +438,7 @@ const PropsTable = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
                                     direction={orderBy === 'player' ? order : 'asc'}
                                     onClick={createSortHandler('player')}
                                 >
-                                    Player
+                                    First
                                 </TableSortLabel>
                             </TableCell>
                             <TableCell align={"center"}>
@@ -448,6 +450,16 @@ const PropsTable = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
                                     Team
                                 </TableSortLabel>
                             </TableCell>
+                            <TableCell align={"center"}>
+                                <TableSortLabel
+                                    active={orderBy === 'position'}
+                                    direction={orderBy === 'position' ? order : 'asc'}
+                                    onClick={createSortHandler('position')}
+                                >
+                                    Position
+                                </TableSortLabel>
+                            </TableCell>
+
                             <TableCell align={"center"}>
                                 <TableSortLabel
                                     active={orderBy === 'line'}
@@ -535,11 +547,12 @@ const PropsTable = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            sortedRows.map((row) => {
+                            sortedRows.map((row,index) => {
                                 const line = getPropLine(row);
                                 const bestOver = getBestOver(row);
                                 const bestUnder = getBestUnder(row);
-                                const logs = row.player.CurrentSeasonLogs || [];
+                                const logs = getPlayerLogs(row.player);
+                                const position = row.player?.positionCode
 
                                 const seasonFrac = calcHitFraction(logs, line, tableFilters.propType, null) * 100;
                                 const l20Frac = calcHitFraction(logs, line, tableFilters.propType, 20) * 100;
@@ -551,18 +564,22 @@ const PropsTable = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
                                 return (
                                     <TableRow
                                         hover
-                                        key={row.id}
-                                        onClick={() => onPlayerSelect(row.player,tableFilters.propType)}
+                                        key={`${row.id}-${index}`}
+                                        onClick={() => onPlayerSelect(row.player,tableFilters)}
                                         sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
                                     >
                                         <TableCell align={"center"}>
                                             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                                {row.player.DISPLAY_FIRST_LAST}
+                                                {row.player.firstName.default} {row.player.lastName.default}
                                             </Typography>
                                         </TableCell>
                                         <TableCell align={"center"}>
                                             <Typography variant="body2">{row.team}</Typography>
                                         </TableCell>
+                                        <TableCell align={"center"}>
+                                            <Typography variant="body2">{position}</Typography>
+                                        </TableCell>
+
                                         <TableCell align={"center"}>
                                             <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
                                                 {line}

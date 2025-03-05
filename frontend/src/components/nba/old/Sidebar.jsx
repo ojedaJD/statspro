@@ -78,14 +78,13 @@ const SidebarFilterBar = ({ filters, onFilterChange, gameOptions }) => {
 
 
 
-const Sidebar = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
+const Sidebar = ({ oddsData, onPlayerSelect }) => {
     // Internal state for sidebar filters
     const [sidebarFilters, setSidebarFilters] = useState(defaultFilters);
 
     const handleFilterChange = (filterType, value) => {
         setSidebarFilters((prev) => {
             const newFilters = { ...prev, [filterType]: value };
-            updateGlobalFilters({ [filterType]: value }); // Only updates global reference
             return newFilters;
         });
     };
@@ -215,7 +214,7 @@ const Sidebar = ({ oddsData, onPlayerSelect, updateGlobalFilters }) => {
                         <ListItem
                             key={player.PERSON_ID}
                             button
-                            onClick={() => onPlayerSelect(player)}
+                            onClick={() => onPlayerSelect(player, sidebarFilters)}
                             sx={{
                                 py: 1,
                                 '&:hover': { bgcolor: 'action.hover' }

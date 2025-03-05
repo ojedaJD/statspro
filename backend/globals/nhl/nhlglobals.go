@@ -45,13 +45,17 @@ func (c *Client) SetBaseUrl(newUrl string) {
 	c.BaseURL = newUrl
 }
 
+func (c *Client) ResetBaseURL() {
+	c.BaseURL = "https://api.nhle.com/"
+}
+
 // NewNHLClient initializes and returns an NHLClient instance.
 func NewNHLClient() *Client {
 	return &Client{
 		HTTPClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		BaseURL: "https://api.nhle.com/", // Corrected base URL
+		BaseURL: "https://api.nhle.com/v1/", // Corrected base URL
 		DefaultHeaders: map[string]string{
 			"Host":            "api.nhle.com",
 			"User-Agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
@@ -195,7 +199,7 @@ func parseResponse(body io.ReadCloser, header http.Header) (interface{}, error) 
 		if err != nil {
 			return nil, fmt.Errorf("failed to read HTML response: %w", err)
 		}
-		return string(htmlContent), fmt.Errorf("NBA API returned HTML error page: %s", string(htmlContent))
+		return string(htmlContent), fmt.Errorf("MLB API returned HTML error page: %s", string(htmlContent))
 	}
 
 	// Decode JSON with UseNumber to avoid float precision issues

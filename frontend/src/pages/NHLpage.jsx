@@ -6,15 +6,14 @@ import Grid from '@mui/material/Grid2'; // Using Grid2 as specified
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import Sidebar from '../components/nba/Sidebar';
-import PropsTable from '../components/nba/PropsTable';
-import PlayerDetailView from '../components/nba/PlayerDetailsPanel';
-import { defaultFilters } from '../utils/nbafilters';
+import Sidebar from '../components/nhl/Sidebar';
+import PropsTable from '../components/nhl/PropsTable';
+import PlayerDetailView from '../components/nhl/PlayerDetailsPanel';
 
 
 
 
-const NBAPage = () => {
+const NHLPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [oddsData, setOddsData] = useState([]);
@@ -27,7 +26,7 @@ const NBAPage = () => {
     const gameOptions = ['All Games'];
     if (oddsData)
     oddsData.forEach(game => {
-        const gameLabel = `${game.AwayTeam.abbreviation} @ ${game.HomeTeam.abbreviation}`;
+        const gameLabel = `${game.Away.Abbreviation} @ ${game.Home.Abbreviation}`;
         if (!gameOptions.includes(gameLabel)) {
             gameOptions.push(gameLabel);
         }
@@ -40,7 +39,7 @@ const NBAPage = () => {
         const fetchOddsData = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get('http://localhost:8080/nba/v2/matchups');
+                const response = await axios.get('http://localhost:8080/nhl/matchups');
                 setOddsData(response.data);
                 setError(null);
             } catch (err) {
@@ -107,4 +106,4 @@ const NBAPage = () => {
     );
 };
 
-export default NBAPage;
+export default NHLPage;

@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Layout from './components/Layout';
 import NBAPage from './pages/NBAPage';
 import UnderConstruction from './pages/UnderConstruction';
+import NHLPage from "./pages/NHLpage";
 
 // Create a theme with primary and secondary colors
 const theme = createTheme({
@@ -42,7 +43,7 @@ function App() {
                         <Route index element={<Navigate to="/nba" replace />} />
                         <Route path="nba/*" element={<NBAPage />} />
                         <Route path="nfl" element={<UnderConstruction sport="NFL" />} />
-                        <Route path="nhl" element={<UnderConstruction sport="NHL" />} />
+                        <Route path="nhl" element={<NHLPage />} />
                         <Route path="mlb" element={<UnderConstruction sport="MLB" />} />
                         <Route path="ncaaf" element={<UnderConstruction sport="NCAAF" />} />
                         <Route path="wnba" element={<UnderConstruction sport="WNBA" />} />

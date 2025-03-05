@@ -196,6 +196,9 @@ var weirdNameMap = map[string]string{
 	"Nick Smith Jr.":     "Nick Smith Jr",
 	"RJ Barrett":         "R.J. Barrett",
 	"Nic Claxton":        "Nicolas Claxton",
+	"Bruce Brown":        "Bruce Brown Jr",
+	"Karlo Matković":     "Karlo Matkovic",
+	"Bogdan Bogdanović":  "Bogdan Bogdanovic",
 }
 
 // GetNBAMatchupsWithOdds Get Today's Game and get acommpanying odds for the matchup

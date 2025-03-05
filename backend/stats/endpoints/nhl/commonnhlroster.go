@@ -6,69 +6,75 @@ import (
 	"sports_api/globals/nhl"
 )
 
-type NHLRoster struct {
-	Defensemen []struct {
-		FirstName struct {
-			Default string `json:"default"`
-		} `json:"firstName"`
-		Id       int `json:"id"`
-		LastName struct {
-			Default string `json:"default"`
-		} `json:"lastName"`
-		PositionCode  string `json:"positionCode"`
-		ShootsCatches string `json:"shootsCatches"`
-		SweaterNumber int    `json:"sweaterNumber"`
-	} `json:"defensemen"`
-	Forwards []struct {
-		FirstName struct {
-			Default string `json:"default"`
-		} `json:"firstName"`
-		Id       int `json:"id"`
-		LastName struct {
-			Default string `json:"default"`
-		} `json:"lastName"`
-		PositionCode  string `json:"positionCode"`
-		ShootsCatches string `json:"shootsCatches"`
-		SweaterNumber int    `json:"sweaterNumber"`
-	} `json:"forwards"`
-	Goalies []struct {
-		FirstName struct {
-			Default string `json:"default"`
-		} `json:"firstName"`
-		Id       int `json:"id"`
-		LastName struct {
-			Default string `json:"default"`
-		} `json:"lastName"`
-		PositionCode  string `json:"positionCode"`
-		ShootsCatches string `json:"shootsCatches"`
-		SweaterNumber int    `json:"sweaterNumber"`
-	} `json:"goalies"`
+type Player struct {
+	FirstName struct {
+		Default string `json:"default"`
+	} `json:"firstName"`
+	Id       int `json:"id"`
+	LastName struct {
+		Default string `json:"default"`
+	} `json:"lastName"`
+	PositionCode  string `json:"positionCode"`
+	ShootsCatches string `json:"shootsCatches"`
+	SweaterNumber int    `json:"sweaterNumber"`
+	GameLogs      []GameLog
+	GoalieLogs    []GoalieGameLog
+	Odds          map[string]map[string][]Outcome `json:"odds,omitempty"`
+}
+type Outcome struct {
+	Name  string  `json:"name"`
+	Point float64 `json:"point"`
+	Price int     `json:"price"`
+}
+
+// SetOutcome method to add/update an outcome for a player
+func (p *Player) SetOutcome(bookmaker, outcomeType, name string, point float64, price int) *Player {
+	// Initialize Odds map if nil
+	if p.Odds == nil {
+		p.Odds = make(map[string]map[string][]Outcome)
+	}
+
+	// Initialize nested map for the bookmaker if nil
+	if p.Odds[outcomeType] == nil {
+		p.Odds[outcomeType] = make(map[string][]Outcome)
+	}
+
+	// Create a new outcome
+	outcome := Outcome{
+		Name:  name,
+		Point: point,
+		Price: price,
+	}
+
+	// Append the outcome to the existing slice
+	p.Odds[outcomeType][bookmaker] = append(p.Odds[outcomeType][bookmaker], outcome)
+
+	return p
 }
 
 // GetNHLRoster SeasonID in form 20242025
-func GetNHLRoster(teamAbbreviation, seasonID string) (*nhl.NHLResponse, error) {
+func (t *NHLTeam) GetRoster(seasonID string) error {
 	nhl.NHLSession.SetBaseUrl("https://api-web.nhle.com/v1/")
 
-	return nhl.NHLSession.NHLGetRequest(fmt.Sprintf("roster/%s/%s", teamAbbreviation, seasonID), nil, "", nil)
+	resp, err := nhl.NHLSession.NHLGetRequest(fmt.Sprintf("roster/%s/%s", t.Abbreviation, seasonID), nil, "", nil)
+	if err != nil {
+		return err
+	}
+
+	var subRoster []Player
+	roster := resp.Data.(map[string]interface{})
+	for _, v := range roster {
+		marshal, err := json.Marshal(v)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(marshal, &subRoster)
+		if err != nil {
+			return err
+		}
+		t.Roster = append(t.Roster, subRoster...)
+	}
+
+	return nil
+
 }
-
-func GetAndParseNHLRoster(teamAbbreviation, seasonID string) NHLRoster {
-	teams, err := GetNHLRoster(teamAbbreviation, seasonID)
-	if err != nil {
-		fmt.Println(err)
-	}
-	marshal, err := json.Marshal(teams.Data)
-	if err != nil {
-		return NHLRoster{}
-	}
-	var roster NHLRoster
-	err = json.Unmarshal(marshal, &roster)
-	if err != nil {
-		return NHLRoster{}
-	}
-
-	return roster
-
-}
-
-//r.json()["data"]
